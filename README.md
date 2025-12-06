@@ -1,0 +1,1 @@
+This acts like a notebook that I use to learn German. My German was bad until I use this child. Feel free to give it a try.
