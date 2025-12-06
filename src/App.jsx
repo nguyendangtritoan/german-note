@@ -8,11 +8,10 @@ import Dashboard from './components/Dashboard';
 const App = () => {
   const logic = useAppLogic();
 
-  if (logic.authLoading) {
-    return <div className="flex h-screen items-center justify-center"><Icon name="Loader2" className="animate-spin w-10 h-10 text-indigo-600"/></div>;
-  }
-
-  if (!logic.user) {
+  // "Silent Boot" Logic:
+  // Render LoginScreen ONLY if not loading AND no user.
+  // If loading, render Dashboard optimistically.
+  if (!logic.user && !logic.authLoading) {
     return <LoginScreen onGoogleLogin={logic.handleGoogleLogin} onGuestLogin={logic.handleGuestLogin} />;
   }
 

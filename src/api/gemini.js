@@ -1,6 +1,37 @@
 import { GEMINI_API_URL } from '../utils/constants';
 
+// --- MOCK DATA GENERATOR ---
+const getMockData = (word) => ({
+  original: word,
+  type: "noun (mock)",
+  article: "das",
+  verbForms: {
+    present_3rd: "mockt",
+    past_3rd: "mockte",
+    perfect_3rd: "hat gemockt",
+    konjunktiv2_3rd: "möckte"
+  },
+  translations: {
+    en: `[Mock] Translation of ${word}`,
+    vi: `[Mock] Bản dịch của ${word}`,
+    es: `[Mock] Traducción de ${word}`,
+    fr: `[Mock] Traduction de ${word}`,
+    ja: `[Mock] ${word} の翻訳`,
+    ko: `[Mock] ${word} 번역`
+  },
+  example: `Das ist ein Mocksatz für das Wort "${word}", um die API zu schonen.`,
+});
+
 export const callGeminiApi = async (word, languages) => {
+  // 1. CHECK FOR MOCK MODE
+  if (import.meta.env.VITE_USE_MOCK_DATA === 'true') {
+    console.log(`🎭 [Mock Mode] Returning fake data for: "${word}"`);
+    // Simulate a small network delay (800ms) to test loading states
+    await new Promise(resolve => setTimeout(resolve, 800));
+    return getMockData(word);
+  }
+
+  // 2. REAL API CALL
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return { error: "API Key is missing in .env file" };
 
@@ -84,7 +115,7 @@ export const callGeminiApi = async (word, languages) => {
     const data = {
       ...rawData,
       translations: translationsObj,
-      // Note: ID and timestamp are assigned later now to distinguish cache vs fresh
+      // Note: ID and timestamp are assigned later in useAppLogic
     };
     delete data.translationsList;
 

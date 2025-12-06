@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { 
   signInAnonymously, 
   signInWithPopup, 
+  linkWithPopup, // New import for account upgrading
   onAuthStateChanged 
 } from 'firebase/auth';
 import { 
   doc, 
   setDoc, 
   getDoc,
+  deleteDoc,
   collection, 
   onSnapshot, 
   query,
@@ -16,14 +18,15 @@ import {
 } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
 import { useSettings } from '../context/SettingsContext';
+import { useBundle } from '../context/BundleContext';
 import { callGeminiApi } from '../api/gemini';
 import { useLocalStorage } from './useLocalStorage';
 
 export const useAppLogic = () => {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const { activeBundleId, setActiveBundleId } = useBundle();
   
-  // Silent Boot: Init from localStorage immediately
   const [localSessionCache, setLocalSessionCache] = useLocalStorage('session_cache', []);
   const [currentSessionWords, setCurrentSessionWords] = useState(localSessionCache);
   
@@ -32,13 +35,12 @@ export const useAppLogic = () => {
   const [requestQueue, setRequestQueue] = useState([]); 
   const { targetLanguages } = useSettings();
 
-  // Search Logic defined before it's used
+  // Search Logic
   const handleSearch = async (wordInput, forcedUser = null) => {
     const activeUser = forcedUser || user;
     const word = wordInput.trim();
     if (!word) return;
 
-    // Queue logic: If no user and still loading auth, queue it
     if (!activeUser && authLoading) {
       setRequestQueue(prev => [...prev, word]);
       return; 
@@ -51,11 +53,19 @@ export const useAppLogic = () => {
       // 1. Local Session Check
       const existing = currentSessionWords.find(w => w.original.toLowerCase() === normalizedKey);
       if (existing) {
+        const otherWords = currentSessionWords.filter(w => w.original.toLowerCase() !== normalizedKey);
+        const newWords = [{ ...existing, timestamp: Date.now() }, ...otherWords];
+        setCurrentSessionWords(newWords);
+        setLocalSessionCache(newWords);
+        if (activeUser) {
+           const appId = 'default-german-app';
+           await setDoc(doc(db, 'artifacts', appId, 'users', activeUser.uid, 'session', 'current'), { words: newWords }, { merge: true });
+        }
         setIsLoading(false);
         return; 
       }
 
-      // 2. Global Hive Mind Check
+      // 2. Global Cache Check
       let data = null;
       let fromCache = false;
 
@@ -79,23 +89,18 @@ export const useAppLogic = () => {
       setIsLoading(false);
 
       if (data && !data.error) {
-        // Optimistic Update
         const newWords = [data, ...currentSessionWords];
         setCurrentSessionWords(newWords); 
         setLocalSessionCache(newWords);   
 
         if (activeUser) {
           const appId = 'default-german-app';
-          // Sync to User Session
           await setDoc(doc(db, 'artifacts', appId, 'users', activeUser.uid, 'session', 'current'), { words: newWords }, { merge: true });
 
-          // Sync to Hive Mind (if fresh)
           if (!fromCache) {
             const globalPayload = { ...data, generated_at: Date.now() };
             delete globalPayload.id; 
             delete globalPayload.timestamp; 
-            
-            // Fire and forget write
             setDoc(doc(db, 'global_dictionary', normalizedKey), globalPayload).catch(console.error);
           }
         }
@@ -106,27 +111,22 @@ export const useAppLogic = () => {
     }
   };
 
-  // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
-      
-      // Process Queue when auth resolves
       if (u && requestQueue.length > 0) {
         requestQueue.forEach(word => handleSearch(word, u));
         setRequestQueue([]);
       }
     });
     return () => unsubscribe();
-  }, [requestQueue]); // Dependency on requestQueue ensures we catch updates
+  }, [requestQueue]);
 
-  // Sync Current Session from Firestore
   useEffect(() => {
     if (!user) return;
     const appId = 'default-german-app';
     const sessionRef = doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current');
-    
     const unsub = onSnapshot(sessionRef, (s) => {
       if (s.exists()) {
         const words = s.data().words || [];
@@ -137,7 +137,6 @@ export const useAppLogic = () => {
     return () => unsub();
   }, [user]);
 
-  // Sync Past Bundles
   useEffect(() => {
     if (!user) return;
     const appId = 'default-german-app';
@@ -149,33 +148,71 @@ export const useAppLogic = () => {
     return () => unsub();
   }, [user]);
 
-  // Bundle Logic (Upsert)
+  // Summarize / Save Logic
   const handleSummarize = async () => {
     if (!currentSessionWords.length || !user) return false;
     
-    const todayId = new Date().toISOString().split('T')[0]; 
     const appId = 'default-german-app';
-    const bundleRef = doc(db, 'artifacts', appId, 'users', user.uid, 'bundles', todayId);
+    let targetId;
+    let isNewBundle = false;
+
+    if (activeBundleId) {
+      targetId = activeBundleId; 
+    } else {
+      const now = new Date();
+      targetId = now.toISOString(); 
+      isNewBundle = true;
+    }
+
+    const bundleRef = doc(db, 'artifacts', appId, 'users', user.uid, 'bundles', targetId);
 
     try {
-      // Calculate new word count based on existing bundle or 0
-      const existingBundle = pastBundles.find(b => b.id === todayId);
-      const currentCount = existingBundle ? existingBundle.wordCount : 0;
+      const existingBundle = pastBundles.find(b => b.id === targetId);
+      const existingWords = existingBundle ? existingBundle.words : [];
+      const existingSet = new Set(existingWords.map(w => w.original.toLowerCase()));
+      const uniqueNewWords = currentSessionWords.filter(w => !existingSet.has(w.original.toLowerCase()));
+
+      if (!isNewBundle && uniqueNewWords.length === 0) {
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { words: [] });
+        setCurrentSessionWords([]);
+        setLocalSessionCache([]);
+        return true; 
+      }
+
+      const mergedWords = [...uniqueNewWords, ...existingWords];
 
       await setDoc(bundleRef, {
-        date: todayId,
+        date: targetId, 
         lastUpdated: serverTimestamp(),
-        words: arrayUnion(...currentSessionWords), 
-        wordCount: currentCount + currentSessionWords.length
+        words: mergedWords, 
+        wordCount: mergedWords.length
       }, { merge: true });
 
-      // Clear session after successful save
+      if (isNewBundle) {
+        setActiveBundleId(targetId);
+      }
+
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { words: [] });
       setCurrentSessionWords([]);
       setLocalSessionCache([]);
       return true;
     } catch (e) { 
       console.error("Summarize Error:", e);
+      return false;
+    }
+  };
+
+  const handleDeleteBundle = async (bundleId) => {
+    if (!user || !bundleId) return;
+    const appId = 'default-german-app';
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'bundles', bundleId));
+      if (activeBundleId === bundleId) {
+        setActiveBundleId(null);
+      }
+      return true;
+    } catch (e) {
+      console.error("Delete Error:", e);
       return false;
     }
   };
@@ -190,6 +227,21 @@ export const useAppLogic = () => {
     catch (e) { console.error("Guest Auth Error:", e); }
   };
 
+  // ULTRA THINK: Convert Guest to Permanent User
+  // Uses linkWithPopup to preserve the current UID and Database Data
+  const handleLinkGoogleAccount = async () => {
+    if (!auth.currentUser) return;
+    try {
+      await linkWithPopup(auth.currentUser, googleProvider);
+      console.log("Account successfully upgraded!");
+    } catch (error) {
+      console.error("Account Link Error:", error);
+      if (error.code === 'auth/credential-already-in-use') {
+        alert("This Google account is already used by another user. Please use a different one.");
+      }
+    }
+  };
+
   return {
     user,
     authLoading,
@@ -198,7 +250,9 @@ export const useAppLogic = () => {
     isLoading: isLoading || (authLoading && requestQueue.length > 0),
     handleSearch,
     handleSummarize,
+    handleDeleteBundle,
     handleGoogleLogin,
-    handleGuestLogin
+    handleGuestLogin,
+    handleLinkGoogleAccount // Exported
   };
 };
