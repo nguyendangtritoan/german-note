@@ -33,8 +33,8 @@ export const useAppLogic = () => {
   const [pastBundles, setPastBundles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [requestQueue, setRequestQueue] = useState([]); 
-  const { targetLanguages } = useSettings();
-
+  const { targetLanguages, selectedGrammar } = useSettings(); // Destructure selectedGrammar
+  
   // Search Logic
   const handleSearch = async (wordInput, forcedUser = null) => {
     const activeUser = forcedUser || user;
@@ -83,7 +83,7 @@ export const useAppLogic = () => {
 
       // 3. AI Fallback
       if (!data) {
-        data = await callGeminiApi(word, targetLanguages);
+        data = await callGeminiApi(word, targetLanguages, selectedGrammar);
       }
       
       setIsLoading(false);

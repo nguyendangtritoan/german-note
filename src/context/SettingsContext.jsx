@@ -8,10 +8,17 @@ export const SettingsProvider = ({ children }) => {
     { code: 'en', name: 'English' },
     { code: 'vi', name: 'Vietnamese' }
   ]);
+  
   const [visibility, setVisibility] = useLocalStorage('visibility', {
     article: true,
     example: true
   });
+
+  // NEW: Store selected grammar topic (String or null)
+  // We allow only 1 topic at a time to keep the AI focused, or multiple if you prefer.
+  // Let's start with single selection for clarity.
+  const [selectedGrammar, setSelectedGrammar] = useState(null);
+
   const [availableLanguages] = useState([
     { code: 'en', name: 'English' },
     { code: 'vi', name: 'Vietnamese' },
@@ -37,10 +44,12 @@ export const SettingsProvider = ({ children }) => {
     targetLanguages,
     visibility,
     availableLanguages,
+    selectedGrammar, // Export state
+    setSelectedGrammar, // Export setter
     toggleLanguage,
     toggleVisibility,
     isLangSelected: (lang) => targetLanguages.some(l => l.code === lang.code)
-  }), [targetLanguages, visibility, availableLanguages]);
+  }), [targetLanguages, visibility, availableLanguages, selectedGrammar]);
 
   return (
     <SettingsContext.Provider value={value}>
