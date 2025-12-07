@@ -16,9 +16,7 @@ const Dashboard = ({ logic }) => {
   const [activeBundle, setActiveBundle] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFlashcardOpen, setIsFlashcardOpen] = useState(false);
-  
   const [isLogoutWarningOpen, setIsLogoutWarningOpen] = useState(false);
-  
   const { activeBundleId } = useBundle();
 
   const { 
@@ -26,7 +24,7 @@ const Dashboard = ({ logic }) => {
     handleSearch, 
     handleSummarize, 
     handleDeleteBundle, 
-    handleLinkGoogleAccount, // Import Upgrade Function
+    handleLinkGoogleAccount, 
     isLoading, 
     currentSessionWords, 
     pastBundles 
@@ -70,7 +68,6 @@ const Dashboard = ({ logic }) => {
           </div>
           
           <div className="flex items-center gap-2">
-             {/* GUEST UPGRADE CALL-TO-ACTION */}
              {isGuest && (
                 <button 
                   onClick={handleLinkGoogleAccount}
@@ -89,8 +86,6 @@ const Dashboard = ({ logic }) => {
              </div>
              
              <Button variant="ghost" size="icon" onClick={() => setIsSettingsOpen(true)}><Icon name="Settings"/></Button>
-             
-             {/* "End Session" for Guests vs "Log Out" for Users */}
              <Button variant="ghost" size="icon" onClick={handleLogoutClick} className="text-red-500 hover:bg-red-50" title={isGuest ? "End Guest Session" : "Log Out"}>
                <Icon name="LogOut"/>
              </Button>
@@ -101,7 +96,6 @@ const Dashboard = ({ logic }) => {
         {currentView === 'live' ? (
           <div className="space-y-6">
             <InputHero onSearch={handleSearch} isLoading={isLoading}/>
-            
             <LiveFeed 
               words={displayedWords} 
               isLoading={isLoading} 
@@ -118,13 +112,14 @@ const Dashboard = ({ logic }) => {
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}/>
       <FlashcardModal isOpen={isFlashcardOpen} onClose={() => setIsFlashcardOpen(false)} bundle={activeBundle}/>
 
-      {/* Guest Warning: Renamed to "End Session" to match mental model */}
+      {/* Guest Data Loss Warning Modal */}
       <ConfirmationModal 
         isOpen={isLogoutWarningOpen}
         onClose={() => setIsLogoutWarningOpen(false)}
         onConfirm={confirmGuestLogout}
         title="End Guest Session?"
         message="You are in a temporary Guest Session. Ending this session will permanently delete all your words and bundles. To keep them, click 'Save Progress' in the header instead."
+        confirmText="End Session" // FIX: Correct label for guests
       />
     </div>
   );

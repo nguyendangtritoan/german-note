@@ -4,9 +4,12 @@ import { useSettings } from '../context/SettingsContext';
 
 const SettingsModal = ({ isOpen, onClose }) => {
   const { targetLanguages, visibility, availableLanguages, toggleLanguage, toggleVisibility, isLangSelected } = useSettings();
+  
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Settings">
-      <div className="space-y-6">
+      {/* FIX: Added 'p-6' (24px) padding here */}
+      <div className="space-y-6 p-6">
+        
         <section>
           <h3 className="text-lg font-medium text-slate-700 mb-3">Target Languages</h3>
           <div className="flex flex-wrap gap-2">
@@ -17,6 +20,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
             ))}
           </div>
         </section>
+
         <section>
           <h3 className="text-lg font-medium text-slate-700 mb-3">Card Visibility</h3>
           <div className="space-y-2">
@@ -34,6 +38,7 @@ const SettingsModal = ({ isOpen, onClose }) => {
             </label>
           </div>
         </section>
+
       </div>
     </Modal>
   );

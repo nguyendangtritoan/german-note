@@ -1,24 +1,25 @@
-// src/utils/grammarData.js
-
 export const GRAMMAR_LEVELS = [
   {
     id: 'A1',
     title: 'A1: The Foundation',
     color: 'bg-green-100 text-green-700 border-green-200',
     topics: [
-      "Nouns & Gender (der/die/das)",
+      "Nouns & Gender",
       "Plural Forms",
-      "Negation (kein vs nicht)",
+      "Negation (nicht/kein)",
       "Nominative Case",
       "Accusative Case",
       "Personal Pronouns",
       "Present Tense (Präsens)",
-      "Verb: Haben & Sein",
+      "Verb: Haben", // Split from &
+      "Verb: Sein",  // Split from &
       "Separable Verbs",
-      "Modal Verbs (Basics)",
+      "Modal Verbs",
       "Imperative",
-      "W-Questions & Yes/No",
-      "Prepositions (Time/Place)"
+      "W-Questions", // Split
+      "Yes/No Questions", // Split
+      "Prepositions (Time)", // Split
+      "Prepositions (Place)" // Split
     ]
   },
   {
@@ -29,13 +30,15 @@ export const GRAMMAR_LEVELS = [
       "Dative Case",
       "Verbs with Dative",
       "Perfect Tense (Perfekt)",
-      "Simple Past (Präteritum Basics)",
+      "Präteritum (Simple Past)",
       "Reflexive Verbs",
       "Futur I",
       "Adjective Comparison",
-      "Adjective Declension (Basic)",
-      "Two-Way Prepositions (Wechselpräpositionen)",
-      "Subordinate Clauses (weil, dass)",
+      "Adjective Declension",
+      "Two-Way Prepositions",
+      "Subordinate Clause (weil)", // Split to avoid confusion
+      "Subordinate Clause (dass)", // Split to avoid confusion
+      "Subordinate Clause (wenn)", // Added common A2
       "Indirect Questions"
     ]
   },
@@ -46,15 +49,14 @@ export const GRAMMAR_LEVELS = [
     topics: [
       "Genitive Case",
       "N-Declension",
-      "Präteritum (Written Narrative)",
-      "Plusquamperfekt (Past Perfect)",
+      "Präteritum (Narrative)",
+      "Plusquamperfekt",
       "Passive Voice (Vorgangspassiv)",
       "Konjunktiv II (Wishes/Polite)",
       "Verbs with Prepositions",
-      "Adjective Declension (Full)",
-      "Participle I & II as Adjectives",
+      "Participles as Adjectives",
       "Infinitive with 'zu'",
-      "Double Connectors (sowohl...als auch)",
+      "Double Connectors",
       "Relative Clauses"
     ]
   },
@@ -65,7 +67,7 @@ export const GRAMMAR_LEVELS = [
     topics: [
       "Passive with Modals",
       "Zustandspassiv (State Passive)",
-      "Subjective Modals (Assumption)",
+      "Subjective Modals",
       "Konjunktiv I (Indirect Speech)",
       "Nominalization",
       "Participle Constructions",

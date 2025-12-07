@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   signInAnonymously, 
   signInWithPopup, 
-  linkWithPopup, // New import for account upgrading
+  linkWithPopup,
   onAuthStateChanged 
 } from 'firebase/auth';
 import { 
@@ -19,7 +19,7 @@ import {
 import { auth, db, googleProvider } from '../firebase';
 import { useSettings } from '../context/SettingsContext';
 import { useBundle } from '../context/BundleContext';
-import { callGeminiApi } from '../api/gemini';
+import { generateWordAnalysis } from '../api';
 import { useLocalStorage } from './useLocalStorage';
 
 export const useAppLogic = () => {
@@ -33,8 +33,8 @@ export const useAppLogic = () => {
   const [pastBundles, setPastBundles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [requestQueue, setRequestQueue] = useState([]); 
-  const { targetLanguages, selectedGrammar } = useSettings(); // Destructure selectedGrammar
-  
+  const { targetLanguages, selectedGrammar } = useSettings();
+
   // Search Logic
   const handleSearch = async (wordInput, forcedUser = null) => {
     const activeUser = forcedUser || user;
@@ -50,13 +50,27 @@ export const useAppLogic = () => {
     const normalizedKey = word.toLowerCase();
 
     try {
-      // 1. Local Session Check
-      const existing = currentSessionWords.find(w => w.original.toLowerCase() === normalizedKey);
+      // 1. DUPLICATE CHECK (Now includes Grammar Topic)
+      // We only reuse the card if BOTH the word AND the grammar topic match exactly.
+      const existing = currentSessionWords.find(w => 
+        w.original.toLowerCase() === normalizedKey && 
+        w.grammarTopic === selectedGrammar
+      );
+
       if (existing) {
-        const otherWords = currentSessionWords.filter(w => w.original.toLowerCase() !== normalizedKey);
+        console.log("Exact Match Found (Word + Topic). Moving to top.");
+        
+        // Remove the old instance
+        const otherWords = currentSessionWords.filter(w => 
+          !(w.original.toLowerCase() === normalizedKey && w.grammarTopic === selectedGrammar)
+        );
+        
+        // Add updated instance to top
         const newWords = [{ ...existing, timestamp: Date.now() }, ...otherWords];
+        
         setCurrentSessionWords(newWords);
         setLocalSessionCache(newWords);
+        
         if (activeUser) {
            const appId = 'default-german-app';
            await setDoc(doc(db, 'artifacts', appId, 'users', activeUser.uid, 'session', 'current'), { words: newWords }, { merge: true });
@@ -65,31 +79,38 @@ export const useAppLogic = () => {
         return; 
       }
 
-      // 2. Global Cache Check
+      // 2. Global Cache Check (Only if no specific grammar is requested)
+      // If user wants specific grammar, we usually skip global cache unless we start caching topics too.
+      // For now, if grammar is selected, we skip cache to ensure accuracy.
       let data = null;
       let fromCache = false;
 
-      try {
-        const globalDocRef = doc(db, 'global_dictionary', normalizedKey);
-        const globalSnap = await getDoc(globalDocRef);
-        
-        if (globalSnap.exists()) {
-          data = { ...globalSnap.data(), id: crypto.randomUUID(), timestamp: Date.now() };
-          fromCache = true;
+      if (!selectedGrammar) {
+        try {
+          const globalDocRef = doc(db, 'global_dictionary', normalizedKey);
+          const globalSnap = await getDoc(globalDocRef);
+          
+          if (globalSnap.exists()) {
+            data = { ...globalSnap.data(), id: crypto.randomUUID(), timestamp: Date.now() };
+            fromCache = true;
+          }
+        } catch (cacheErr) {
+          console.warn("Cache check skipped:", cacheErr);
         }
-      } catch (cacheErr) {
-        console.warn("Cache check skipped:", cacheErr);
       }
 
-      // 3. AI Fallback
+      // 3. AI Generation
       if (!data) {
-        data = await callGeminiApi(word, targetLanguages, selectedGrammar);
+        data = await generateWordAnalysis(word, targetLanguages, selectedGrammar);
       }
       
       setIsLoading(false);
 
       if (data && !data.error) {
+        // Add NEW card to top
+        // Note: We do NOT filter out other cards with the same word but different topics.
         const newWords = [data, ...currentSessionWords];
+        
         setCurrentSessionWords(newWords); 
         setLocalSessionCache(newWords);   
 
@@ -97,7 +118,8 @@ export const useAppLogic = () => {
           const appId = 'default-german-app';
           await setDoc(doc(db, 'artifacts', appId, 'users', activeUser.uid, 'session', 'current'), { words: newWords }, { merge: true });
 
-          if (!fromCache) {
+          // Only write to Global Cache if it's a "standard" (no grammar) definition
+          if (!fromCache && !selectedGrammar) {
             const globalPayload = { ...data, generated_at: Date.now() };
             delete globalPayload.id; 
             delete globalPayload.timestamp; 
@@ -111,6 +133,7 @@ export const useAppLogic = () => {
     }
   };
 
+  // ... (Rest of useAppLogic remains the same) ...
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -148,7 +171,6 @@ export const useAppLogic = () => {
     return () => unsub();
   }, [user]);
 
-  // Summarize / Save Logic
   const handleSummarize = async () => {
     if (!currentSessionWords.length || !user) return false;
     
@@ -169,8 +191,14 @@ export const useAppLogic = () => {
     try {
       const existingBundle = pastBundles.find(b => b.id === targetId);
       const existingWords = existingBundle ? existingBundle.words : [];
-      const existingSet = new Set(existingWords.map(w => w.original.toLowerCase()));
-      const uniqueNewWords = currentSessionWords.filter(w => !existingSet.has(w.original.toLowerCase()));
+      
+      // LOGIC FIX for Saving:
+      // A word is "duplicate" only if it has same original AND same grammar topic
+      const existingSignatures = new Set(existingWords.map(w => `${w.original.toLowerCase()}|${w.grammarTopic || ''}`));
+      
+      const uniqueNewWords = currentSessionWords.filter(w => 
+        !existingSignatures.has(`${w.original.toLowerCase()}|${w.grammarTopic || ''}`)
+      );
 
       if (!isNewBundle && uniqueNewWords.length === 0) {
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { words: [] });
@@ -217,6 +245,15 @@ export const useAppLogic = () => {
     }
   };
 
+  const handleLinkGoogleAccount = async () => {
+    if (!auth.currentUser) return;
+    try {
+      await linkWithPopup(auth.currentUser, googleProvider);
+    } catch (error) {
+      console.error("Link Error:", error);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     try { await signInWithPopup(auth, googleProvider); } 
     catch (e) { console.error("Google Auth Error:", e); }
@@ -225,21 +262,6 @@ export const useAppLogic = () => {
   const handleGuestLogin = async () => {
     try { await signInAnonymously(auth); } 
     catch (e) { console.error("Guest Auth Error:", e); }
-  };
-
-  // ULTRA THINK: Convert Guest to Permanent User
-  // Uses linkWithPopup to preserve the current UID and Database Data
-  const handleLinkGoogleAccount = async () => {
-    if (!auth.currentUser) return;
-    try {
-      await linkWithPopup(auth.currentUser, googleProvider);
-      console.log("Account successfully upgraded!");
-    } catch (error) {
-      console.error("Account Link Error:", error);
-      if (error.code === 'auth/credential-already-in-use') {
-        alert("This Google account is already used by another user. Please use a different one.");
-      }
-    }
   };
 
   return {
@@ -251,8 +273,8 @@ export const useAppLogic = () => {
     handleSearch,
     handleSummarize,
     handleDeleteBundle,
+    handleLinkGoogleAccount,
     handleGoogleLogin,
-    handleGuestLogin,
-    handleLinkGoogleAccount // Exported
+    handleGuestLogin
   };
 };
