@@ -16,6 +16,23 @@ const InputHero = ({ onSearch, isLoading }) => {
     }
   }, [isLoading]);
 
+  // NEW: Handle Umlaut Transliteration
+  const handleInputChange = (e) => {
+    let value = e.target.value;
+
+    // Replace patterns with German Umlauts
+    value = value
+      .replace(/ae/g, 'ä')
+      .replace(/oe/g, 'ö')
+      .replace(/ue/g, 'ü')
+      // Capitalized variants (e.g. at start of Nouns)
+      .replace(/Ae/g, 'Ä')
+      .replace(/Oe/g, 'Ö')
+      .replace(/Ue/g, 'Ü');
+
+    setWord(value);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (word.trim() && !isLoading) { 
@@ -26,25 +43,26 @@ const InputHero = ({ onSearch, isLoading }) => {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 relative group">
+        
         {/* INPUT CONTAINER */}
-        <div className="relative group">
+        <div className="relative">
           <input 
             ref={inputRef}
             type="text" 
             value={word} 
-            onChange={(e) => setWord(e.target.value)} 
-            placeholder={isLoading ? "Processing..." : "Type a German word..."}
-            className={`w-full pl-6 pr-32 py-5 text-lg border-2 rounded-xl shadow-sm focus:outline-none transition-all 
+            onChange={handleInputChange} // FIX: Use custom handler
+            placeholder={isLoading ? "Processing..." : "Type (ae → ä, oe → ö)..."}
+            className={`w-full pl-6 pr-32 py-5 text-lg border-2 rounded-xl shadow-inner focus:outline-none transition-all 
               ${selectedGrammar 
-                ? 'border-indigo-400 ring-4 ring-indigo-50' 
-                : 'border-slate-200 focus:ring-4 focus:ring-indigo-50 focus:border-indigo-400'
+                ? 'border-indigo-300 ring-2 ring-indigo-100' 
+                : 'border-slate-200 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400'
               }`}
             disabled={isLoading} 
             autoFocus 
           />
           
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <button
               type="button"
               onClick={() => setIsGrammarOpen(true)}
@@ -58,23 +76,23 @@ const InputHero = ({ onSearch, isLoading }) => {
               <Icon name="Settings" className="w-5 h-5" />
             </button>
 
-            <Button type="submit" size="icon" disabled={isLoading} className="rounded-lg h-10 w-10 shadow-sm">
+            <Button type="submit" size="icon" disabled={isLoading} className="rounded-lg h-10 w-10">
               {isLoading ? <Icon name="Loader2" className="animate-spin" /> : <Icon name="ArrowRight" />}
             </Button>
           </div>
         </div>
 
-        {/* ACTIVE BADGE (Standard Flow - No Overlap) */}
+        {/* ACTIVE BADGE */}
         {selectedGrammar && (
-          <div className="flex items-center gap-2 animate-in slide-in-from-top-2 fade-in duration-200 pl-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Focus Mode:</span>
-            <span className="flex items-center gap-1.5 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full shadow-sm">
+          <div className="flex items-center gap-2 animate-in slide-in-from-top-2 duration-200 pl-1">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Focus:</span>
+            <span className="flex items-center gap-1 px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-full shadow-sm">
               <Icon name="Sparkles" className="w-3 h-3" />
               {selectedGrammar}
               <button 
                 type="button"
                 onClick={() => setSelectedGrammar(null)} 
-                className="ml-1 p-0.5 hover:bg-white/20 rounded-full transition-colors"
+                className="ml-1 text-indigo-200 hover:text-white transition-colors"
                 title="Clear filter"
               >
                 <Icon name="X" className="w-3 h-3" />

@@ -14,9 +14,9 @@ const renderHighlightedText = (text) => {
   });
 };
 
-export const WordCard = ({ wordData }) => {
+export const WordCard = ({ wordData, onDelete }) => {
   const { visibility } = useSettings();
-  const { original, article, type, translations = {}, example, grammarTopic } = wordData; // Added grammarTopic
+  const { original, article, type, translations = {}, example, grammarTopic } = wordData;
 
   const renderArticle = () => {
     if (!article || article === 'null' || !visibility.article) return null;
@@ -27,15 +27,31 @@ export const WordCard = ({ wordData }) => {
     <div className="bg-white shadow-lg rounded-xl overflow-hidden transition-all hover:shadow-xl border border-slate-100 group relative">
       <div className="p-5">
         
-        {/* NEW: Grammar Topic Badge */}
-        {grammarTopic && (
-          <div className="absolute top-4 right-4">
+        {/* TOP CONTROLS (Badge + Delete) */}
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          
+          {/* Grammar Badge */}
+          {grammarTopic && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-100 uppercase tracking-wide">
               <Icon name="Sparkles" className="w-3 h-3 mr-1" />
               {grammarTopic}
             </span>
-          </div>
-        )}
+          )}
+
+          {/* Delete Button (Visible on Hover) */}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // Prevents clicking the card background if we add that later
+                onDelete();
+              }}
+              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+              title="Delete word"
+            >
+              <Icon name="X" className="w-4 h-4" />
+            </button>
+          )}
+        </div>
 
         <header className="flex justify-between items-start mb-3">
           <div className="flex flex-col text-left">

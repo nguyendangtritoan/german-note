@@ -23,7 +23,9 @@ const Dashboard = ({ logic }) => {
     user, 
     handleSearch, 
     handleSummarize, 
-    handleDeleteBundle, 
+    handleDeleteBundle,
+    handleDeleteWord, 
+    handleDeleteWordFromBundle, // NEW IMPORT
     handleLinkGoogleAccount, 
     isLoading, 
     currentSessionWords, 
@@ -96,11 +98,14 @@ const Dashboard = ({ logic }) => {
         {currentView === 'live' ? (
           <div className="space-y-6">
             <InputHero onSearch={handleSearch} isLoading={isLoading}/>
+            
             <LiveFeed 
               words={displayedWords} 
               isLoading={isLoading} 
               onSummarize={handleSummarizeWrap}
               onDeleteBundle={handleDeleteBundle} 
+              onDeleteWord={handleDeleteWord} 
+              onDeleteWordFromBundle={handleDeleteWordFromBundle} // PASS DOWN
               pastBundles={pastBundles} 
             />
           </div>
@@ -112,14 +117,13 @@ const Dashboard = ({ logic }) => {
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)}/>
       <FlashcardModal isOpen={isFlashcardOpen} onClose={() => setIsFlashcardOpen(false)} bundle={activeBundle}/>
 
-      {/* Guest Data Loss Warning Modal */}
       <ConfirmationModal 
         isOpen={isLogoutWarningOpen}
         onClose={() => setIsLogoutWarningOpen(false)}
         onConfirm={confirmGuestLogout}
         title="End Guest Session?"
         message="You are in a temporary Guest Session. Ending this session will permanently delete all your words and bundles. To keep them, click 'Save Progress' in the header instead."
-        confirmText="End Session" // FIX: Correct label for guests
+        confirmText="End Session"
       />
     </div>
   );

@@ -6,7 +6,7 @@ import { useBundle } from '../context/BundleContext';
 import ConfirmationModal from './ConfirmationModal';
 import BundleSelector from './BundleSelector';
 
-const LiveFeed = ({ words, isLoading, onSummarize, onDeleteBundle, pastBundles }) => {
+const LiveFeed = ({ words, isLoading, onSummarize, onDeleteBundle, onDeleteWord, onDeleteWordFromBundle, pastBundles }) => {
   const { activeBundleId, setActiveBundleId } = useBundle();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const hasWords = words && words.length > 0;
@@ -31,7 +31,19 @@ const LiveFeed = ({ words, isLoading, onSummarize, onDeleteBundle, pastBundles }
       const currentWord = words[i];
       const nextWord = words[i + 1];
       const itemKey = currentWord.id || `word-${i}-${currentWord.original}`;
-      listItems.push(<WordCard key={itemKey} wordData={currentWord} />);
+      
+      // LOGIC SWITCH: Determine which delete function to use
+      const deleteHandler = activeBundleId
+        ? () => onDeleteWordFromBundle(activeBundleId, currentWord.id) // Delete from saved bundle
+        : () => onDeleteWord(currentWord.id); // Delete from live session
+
+      listItems.push(
+        <WordCard 
+          key={itemKey} 
+          wordData={currentWord} 
+          onDelete={deleteHandler} 
+        />
+      );
 
       if (nextWord) {
         const currentTime = currentWord.timestamp || 0;
@@ -109,7 +121,7 @@ const LiveFeed = ({ words, isLoading, onSummarize, onDeleteBundle, pastBundles }
         onConfirm={handleConfirmDelete}
         title="Delete Bundle?"
         message="Are you sure you want to delete this study bundle? This action cannot be undone."
-        confirmText="Yes, Delete Bundle" // FIX: Correct label for bundles
+        confirmText="Yes, Delete Bundle"
       />
     </>
   );
