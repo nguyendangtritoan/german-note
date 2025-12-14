@@ -55,7 +55,7 @@ const Dashboard = ({ logic }) => {
 
   const getToggleBtnClass = (viewName) => {
     const isActive = currentView === viewName;
-    return `relative flex items-center justify-center px-4 py-2 text-sm font-bold rounded-lg transition-all duration-200 focus:outline-none ${
+    return `relative flex items-center justify-center px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-bold rounded-lg transition-all duration-200 focus:outline-none ${
       isActive 
         ? 'bg-indigo-600 text-white shadow-md ring-2 ring-white dark:ring-indigo-900' 
         : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -68,22 +68,22 @@ const Dashboard = ({ logic }) => {
       <header className="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-50 border-b border-slate-100 dark:border-slate-700 h-[64px] flex items-center transition-colors">
         <nav className="w-full max-w-[90rem] mx-auto px-4 sm:px-6 flex justify-between items-center">
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
             <button onClick={() => setCurrentView('live')} className={getToggleBtnClass('live')}>
-              <Icon name="LayoutDashboard" className={`mr-2 w-4 h-4 ${currentView === 'live' ? 'text-indigo-100' : 'text-slate-400'}`} />
+              <Icon name="LayoutDashboard" className={`mr-1.5 md:mr-2 w-3.5 h-3.5 md:w-4 md:h-4 ${currentView === 'live' ? 'text-indigo-100' : 'text-slate-400'}`} />
               Feed
             </button>
             <button onClick={() => setCurrentView('bundles')} className={getToggleBtnClass('bundles')}>
-              <Icon name="Book" className={`mr-2 w-4 h-4 ${currentView === 'bundles' ? 'text-indigo-100' : 'text-slate-400'}`} />
+              <Icon name="Book" className={`mr-1.5 md:mr-2 w-3.5 h-3.5 md:w-4 md:h-4 ${currentView === 'bundles' ? 'text-indigo-100' : 'text-slate-400'}`} />
               Bundles
             </button>
           </div>
           
           <div className="flex items-center gap-3">
-             {isGuest && (
-                <button onClick={handleLinkGoogleAccount} className="hiddenQl md:flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors mr-2 border border-indigo-200 dark:border-indigo-800">
+            {isGuest && (
+                <button onClick={handleLinkGoogleAccount} className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-3 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors mr-2 border border-indigo-200 dark:border-indigo-800" title="Save Progress">
                   <Icon name="Sparkles" className="w-3.5 h-3.5" />
-                  Save Progress
+                  <span className="hidden md:inline">Save Progress</span>
                 </button>
              )}
 

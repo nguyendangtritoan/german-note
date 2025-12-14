@@ -14,10 +14,32 @@ const InputHero = ({ onSearch, isLoading, onOpenGrammar, searchHistory = [], cla
 
   const handleInputChange = (e) => {
     let value = e.target.value;
-    value = value.replace(/ae/g, 'ä').replace(/oe/g, 'ö').replace(/ue/g, 'ü').replace(/Ae/g, 'Ä').replace(/Oe/g, 'Ö').replace(/Ue/g, 'Ü');
+    
+    // 1. Revert: If user types 'e' after an umlaut (e.g. 'öe'), revert to 'oe' and add invisible ZWNJ to protect it
+    value = value
+      .replace(/äe/g, 'ae\u200c')
+      .replace(/Äe/g, 'Ae\u200c')
+      .replace(/öe/g, 'oe\u200c')
+      .replace(/Öe/g, 'Oe\u200c')
+      .replace(/üe/g, 'ue\u200c')
+      .replace(/Üe/g, 'Ue\u200c');
+
+    // 2. Convert: Standard umlaut replacement, but ignore if protected by ZWNJ
+    value = value
+      .replace(/ae(?!\u200c)/g, 'ä')
+      .replace(/Ae(?!\u200c)/g, 'Ä')
+      .replace(/oe(?!\u200c)/g, 'ö')
+      .replace(/Oe(?!\u200c)/g, 'Ö')
+      .replace(/ue(?!\u200c)/g, 'ü')
+      .replace(/Ue(?!\u200c)/g, 'Ü');
+
     setWord(value);
-    if (value.trim()) {
-      const lowerValue = value.toLowerCase();
+
+    // Clean invisible characters for logic
+    const cleanValue = value.replace(/\u200c/g, '');
+
+    if (cleanValue.trim()) {
+      const lowerValue = cleanValue.toLowerCase();
       const matches = searchHistory.filter(item => item.toLowerCase().includes(lowerValue) && item.toLowerCase() !== lowerValue).slice(0, 5);
       setSuggestions(matches);
       setShowSuggestions(matches.length > 0);
@@ -27,7 +49,17 @@ const InputHero = ({ onSearch, isLoading, onOpenGrammar, searchHistory = [], cla
   };
 
   const handleSuggestionClick = (suggestion) => { setWord(suggestion); setShowSuggestions(false); inputRef.current?.focus(); };
-  const handleSubmit = (e) => { e.preventDefault(); setShowSuggestions(false); if (word.trim() && !isLoading) { onSearch(word.trim()); setWord(""); } };
+  
+  const handleSubmit = (e) => { 
+    e.preventDefault(); 
+    setShowSuggestions(false); 
+    // Strip ZWNJ before searching
+    const cleanWord = word.replace(/\u200c/g, '').trim();
+    if (cleanWord && !isLoading) { 
+      onSearch(cleanWord); 
+      setWord(""); 
+    } 
+  };
 
   return (
     <form onSubmit={handleSubmit} className={`flex flex-col relative group ${className}`}>

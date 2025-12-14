@@ -16,6 +16,10 @@ export const generateWordAnalysis = async (word, languages, grammarTopic = null,
   }
 
   const provider = import.meta.env.VITE_AI_PROVIDER || 'groq';
+  const model = import.meta.env.VITE_GROQ_MODEL || 'default';
+  
+  console.log(`[AI Service] 📡 Requesting '${word}' via ${provider.toUpperCase()} (Model: ${model})`);
+
   let data;
 
   if (provider === 'groq') {
@@ -44,7 +48,8 @@ export const regenerateExample = async (word, grammarTopic = null) => {
   const provider = import.meta.env.VITE_AI_PROVIDER || 'groq';
   let data;
 
-  console.log(`♻️ Regenerating Example via ${provider}...`);
+  const model = import.meta.env.VITE_GROQ_MODEL || 'default';
+  console.log(`♻️ Regenerating Example via ${provider} (Model: ${model})...`);
 
   // Pass 'buildRegeneratePrompt' as the promptBuilder argument
   if (provider === 'groq') {

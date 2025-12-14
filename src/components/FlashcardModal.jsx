@@ -51,21 +51,21 @@ const FlashcardModal = ({ isOpen, onClose, bundle }) => {
     setCurrentIndex(prev => (prev - 1 + words.length) % words.length); 
   };
 
-  // Helper: Auto-resize font based on character count
+// Helper: Auto-resize font based on character count
   const getDynamicFontSize = (text, isBack = false) => {
     const len = text ? text.length : 0;
     
     if (isBack) {
-      if (len > 20) return 'text-2xl';
-      if (len > 12) return 'text-3xl';
-      if (len > 8) return 'text-4xl';
-      return 'text-5xl';
+      if (len > 20) return 'text-lg md:text-2xl';
+      if (len > 12) return 'text-xl md:text-3xl';
+      if (len > 8) return 'text-2xl md:text-4xl';
+      return 'text-3xl md:text-5xl';
     }
 
-    if (len > 20) return 'text-3xl';
-    if (len > 12) return 'text-5xl';
-    if (len > 8) return 'text-6xl';
-    return 'text-7xl'; 
+    if (len > 20) return 'text-xl md:text-3xl';
+    if (len > 12) return 'text-2xl md:text-5xl';
+    if (len > 8) return 'text-3xl md:text-6xl';
+    return 'text-4xl md:text-7xl'; 
   };
 
   const frontSize = getDynamicFontSize(currentWord.original, false);
