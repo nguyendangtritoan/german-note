@@ -1,44 +1,26 @@
 import { GEMINI_API_URL } from '../utils/constants';
 import { buildSystemPrompt } from '../utils/promptUtils';
 
-export const callGeminiApi = async (word, languages, grammarTopic = null) => {
-  // Mock logic handled by Adapter usually, but kept here if called directly
+// Added 'promptBuilder' parameter
+export const callGeminiApi = async (word, languages, grammarTopic = null, options = {}, promptBuilder = null) => {
   if (import.meta.env.VITE_USE_MOCK_DATA === 'true') {
-     // ... (handled in adapter usually)
+     // Mock logic fallback would go here
   }
 
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) return { error: "Gemini API Key is missing in .env file" };
 
-  const systemPrompt = buildSystemPrompt(word, languages, grammarTopic);
+  // Use custom builder if provided, else default
+  const systemPrompt = promptBuilder 
+    ? promptBuilder(word, grammarTopic) 
+    : buildSystemPrompt(word, languages, grammarTopic, options);
 
   const payload = {
-    contents: [{ parts: [{ text: `Analyze this word: "${word}"` }] }],
+    contents: [{ parts: [{ text: `Analyze: "${word}"` }] }],
     systemInstruction: { parts: [{ text: systemPrompt }] },
     generationConfig: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "OBJECT",
-        properties: {
-          original: { type: "STRING" },
-          type: { type: "STRING" },
-          article: { type: "STRING" },
-          // Removed verbForms property
-          translationsList: { 
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                code: { type: "STRING" },
-                text: { type: "STRING" }
-              },
-              required: ["code", "text"]
-            }
-          },
-          example: { type: "STRING" }
-        },
-        required: ["original", "type", "article", "translationsList", "example"]
-      }
+      responseMimeType: "application/json"
+      // We rely on the prompt to enforce schema for flexibility
     }
   };
 
@@ -63,17 +45,21 @@ export const callGeminiApi = async (word, languages, grammarTopic = null) => {
     const result = await response.json();
     const rawData = JSON.parse(result.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
     
-    const translationsObj = {};
-    if (rawData.translationsList && Array.isArray(rawData.translationsList)) {
-      rawData.translationsList.forEach(item => {
-        if (item.code && item.text) translationsObj[item.code] = item.text;
-      });
+    // If it's the full analysis, process translations. If just example, return as is.
+    if (rawData.translationsList) {
+       const translationsObj = {};
+       if (Array.isArray(rawData.translationsList)) {
+         rawData.translationsList.forEach(item => {
+           if (item.code && item.text) translationsObj[item.code] = item.text;
+         });
+       }
+       const { translationsList, ...cleanData } = rawData;
+       return { ...cleanData, translations: translationsObj };
     }
 
-    return { ...rawData, translations: translationsObj };
+    return rawData; // Returns { example: "..." } for regeneration
   } catch (error) {
     console.error("API Error", error);
-    if (error.name === 'AbortError') return { error: "Request timed out." };
     return { error: "Failed to analyze word." };
   }
 };

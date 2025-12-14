@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 const SettingsContext = createContext();
@@ -9,14 +9,27 @@ export const SettingsProvider = ({ children }) => {
     { code: 'vi', name: 'Vietnamese' }
   ]);
   
-  const [visibility, setVisibility] = useLocalStorage('visibility', {
+  // DEFAULT CONFIGURATION
+  const defaultVisibility = {
     article: true,
-    example: true
-  });
+    example: true,
+    plural: true,     // New
+    verbForms: true   // New
+  };
 
-  // NEW: Store selected grammar topic (String or null)
-  // We allow only 1 topic at a time to keep the AI focused, or multiple if you prefer.
-  // Let's start with single selection for clarity.
+  const [visibility, setVisibility] = useLocalStorage('visibility', defaultVisibility);
+
+  // MIGRATION FIX: Ensure new settings (plural/verbForms) are added to existing users
+  useEffect(() => {
+    setVisibility(prev => {
+      // If the stored settings are missing keys, merge them with defaults
+      if (prev.plural === undefined || prev.verbForms === undefined) {
+        return { ...defaultVisibility, ...prev };
+      }
+      return prev;
+    });
+  }, []);
+
   const [selectedGrammar, setSelectedGrammar] = useState(null);
 
   const [availableLanguages] = useState([
@@ -44,8 +57,8 @@ export const SettingsProvider = ({ children }) => {
     targetLanguages,
     visibility,
     availableLanguages,
-    selectedGrammar, // Export state
-    setSelectedGrammar, // Export setter
+    selectedGrammar, 
+    setSelectedGrammar, 
     toggleLanguage,
     toggleVisibility,
     isLangSelected: (lang) => targetLanguages.some(l => l.code === lang.code)

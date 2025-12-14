@@ -7,7 +7,6 @@ const SettingsModal = ({ isOpen, onClose }) => {
   
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Settings">
-      {/* FIX: Added 'p-6' (24px) padding here */}
       <div className="space-y-6 p-6">
         
         <section>
@@ -22,14 +21,33 @@ const SettingsModal = ({ isOpen, onClose }) => {
         </section>
 
         <section>
-          <h3 className="text-lg font-medium text-slate-700 mb-3">Card Visibility</h3>
+          <h3 className="text-lg font-medium text-slate-700 mb-3">Card Visibility & Content</h3>
           <div className="space-y-2">
+            {/* ARTICLE */}
             <label className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
               <span className="font-medium text-slate-600">Show Article (der, die, das)</span>
               <button onClick={() => toggleVisibility('article')} className={`w-11 p-1 rounded-full transition-colors flex items-center ${visibility.article ? 'bg-indigo-600 justify-end' : 'bg-slate-300 justify-start'}`}>
                 <span className="block w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
               </button>
             </label>
+
+            {/* PLURAL (NEW) */}
+            <label className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+              <span className="font-medium text-slate-600">Show Plural Forms (Nouns)</span>
+              <button onClick={() => toggleVisibility('plural')} className={`w-11 p-1 rounded-full transition-colors flex items-center ${visibility.plural ? 'bg-indigo-600 justify-end' : 'bg-slate-300 justify-start'}`}>
+                <span className="block w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+              </button>
+            </label>
+
+            {/* VERB FORMS (NEW) */}
+            <label className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
+              <span className="font-medium text-slate-600">Show Principal Parts (Verbs)</span>
+              <button onClick={() => toggleVisibility('verbForms')} className={`w-11 p-1 rounded-full transition-colors flex items-center ${visibility.verbForms ? 'bg-indigo-600 justify-end' : 'bg-slate-300 justify-start'}`}>
+                <span className="block w-5 h-5 bg-white rounded-full shadow transition-transform"></span>
+              </button>
+            </label>
+
+            {/* EXAMPLE SENTENCE */}
             <label className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors">
               <span className="font-medium text-slate-600">Show Example Sentence</span>
                <button onClick={() => toggleVisibility('example')} className={`w-11 p-1 rounded-full transition-colors flex items-center ${visibility.example ? 'bg-indigo-600 justify-end' : 'bg-slate-300 justify-start'}`}>

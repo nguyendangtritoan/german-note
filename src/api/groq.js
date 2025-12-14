@@ -1,14 +1,17 @@
-import { buildSystemPrompt, JSON_SCHEMA_STRING } from '../utils/promptUtils'; // Import centralized logic
+import { buildSystemPrompt, JSON_SCHEMA_STRING } from '../utils/promptUtils'; 
 
-export const callGroqApi = async (word, languages, grammarTopic = null) => {
+export const callGroqApi = async (word, languages, grammarTopic = null, options = {}, promptBuilder = null) => {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   if (!apiKey) return { error: "Groq API Key is missing in .env file" };
 
-  // Use the centralized prompt builder
-  const basePrompt = buildSystemPrompt(word, languages, grammarTopic);
+  let systemPrompt;
   
-  // Combine Base Prompt + Shared Schema String
-  const systemPrompt = `${basePrompt}\n\nOutput strictly JSON matching this schema:\n${JSON_SCHEMA_STRING}`;
+  if (promptBuilder) {
+    systemPrompt = promptBuilder(word, grammarTopic);
+  } else {
+    const basePrompt = buildSystemPrompt(word, languages, grammarTopic, options);
+    systemPrompt = `${basePrompt}\n\nOutput strictly JSON matching this schema:\n${JSON_SCHEMA_STRING}`;
+  }
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -35,17 +38,18 @@ export const callGroqApi = async (word, languages, grammarTopic = null) => {
     const json = await response.json();
     const rawData = JSON.parse(json.choices[0].message.content);
 
-    const translationsObj = {};
-    if (rawData.translationsList && Array.isArray(rawData.translationsList)) {
-      rawData.translationsList.forEach(item => {
-        if (item.code && item.text) translationsObj[item.code] = item.text;
-      });
+    if (rawData.translationsList) {
+        const translationsObj = {};
+        if (Array.isArray(rawData.translationsList)) {
+          rawData.translationsList.forEach(item => {
+            if (item.code && item.text) translationsObj[item.code] = item.text;
+          });
+        }
+        const { translationsList, ...cleanData } = rawData;
+        return { ...cleanData, translations: translationsObj };
     }
 
-    return {
-      ...rawData,
-      translations: translationsObj
-    };
+    return rawData;
 
   } catch (error) {
     console.error("Groq API Error", error);
