@@ -15,7 +15,7 @@ export const generateWordAnalysis = async (word, languages, grammarTopic = null,
     };
   }
 
-  const provider = import.meta.env.VITE_AI_PROVIDER || 'gemini';
+  const provider = import.meta.env.VITE_AI_PROVIDER || 'groq';
   let data;
 
   if (provider === 'groq') {
@@ -41,7 +41,7 @@ export const regenerateExample = async (word, grammarTopic = null) => {
     return { example: `[Regenerated] Example for ${word}` };
   }
 
-  const provider = import.meta.env.VITE_AI_PROVIDER || 'gemini';
+  const provider = import.meta.env.VITE_AI_PROVIDER || 'groq';
   let data;
 
   console.log(`♻️ Regenerating Example via ${provider}...`);
