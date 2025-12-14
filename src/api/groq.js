@@ -2,6 +2,9 @@ import { buildSystemPrompt, JSON_SCHEMA_STRING } from '../utils/promptUtils';
 
 export const callGroqApi = async (word, languages, grammarTopic = null, options = {}, promptBuilder = null) => {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  // Get model from .env or fallback to default
+  const modelName = import.meta.env.VITE_GROQ_MODEL || "llama-3.3-70b-versatile";
+
   if (!apiKey) return { error: "Groq API Key is missing in .env file" };
 
   let systemPrompt;
@@ -25,7 +28,7 @@ export const callGroqApi = async (word, languages, grammarTopic = null, options 
           { role: "system", content: systemPrompt },
           { role: "user", content: `Word: "${word}"` }
         ],
-        model: "llama-3.3-70b-versatile", 
+        model: modelName, // UPDATED: Uses variable
         response_format: { type: "json_object" } 
       })
     });

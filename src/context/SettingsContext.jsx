@@ -34,11 +34,7 @@ export const SettingsProvider = ({ children }) => {
 
   const [availableLanguages] = useState([
     { code: 'en', name: 'English' },
-    { code: 'vi', name: 'Vietnamese' },
-    { code: 'es', name: 'Spanish' },
-    { code: 'fr', name: 'French' },
-    { code: 'ja', name: 'Japanese' },
-    { code: 'ko', name: 'Korean' }
+    { code: 'vi', name: 'Vietnamese' }
   ]);
 
   const toggleLanguage = (lang) => {
