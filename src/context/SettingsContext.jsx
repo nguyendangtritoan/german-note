@@ -9,20 +9,30 @@ export const SettingsProvider = ({ children }) => {
     { code: 'vi', name: 'Vietnamese' }
   ]);
   
-  // DEFAULT CONFIGURATION
   const defaultVisibility = {
     article: true,
     example: true,
-    plural: true,     // New
-    verbForms: true   // New
+    plural: true,
+    verbForms: true
   };
 
   const [visibility, setVisibility] = useLocalStorage('visibility', defaultVisibility);
+  
+  // NEW: Dark Mode State
+  const [darkMode, setDarkMode] = useLocalStorage('darkMode', false);
 
-  // MIGRATION FIX: Ensure new settings (plural/verbForms) are added to existing users
+  // NEW: Effect to apply dark mode to HTML tag
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Migration Fix for visibility
   useEffect(() => {
     setVisibility(prev => {
-      // If the stored settings are missing keys, merge them with defaults
       if (prev.plural === undefined || prev.verbForms === undefined) {
         return { ...defaultVisibility, ...prev };
       }
@@ -48,17 +58,22 @@ export const SettingsProvider = ({ children }) => {
   const toggleVisibility = (key) => {
     setVisibility(prev => ({ ...prev, [key]: !prev[key] }));
   };
+  
+  // NEW: Toggle function
+  const toggleDarkMode = () => setDarkMode(prev => !prev);
 
   const value = useMemo(() => ({
     targetLanguages,
     visibility,
     availableLanguages,
     selectedGrammar, 
+    darkMode, // Exported
     setSelectedGrammar, 
     toggleLanguage,
     toggleVisibility,
+    toggleDarkMode, // Exported
     isLangSelected: (lang) => targetLanguages.some(l => l.code === lang.code)
-  }), [targetLanguages, visibility, availableLanguages, selectedGrammar]);
+  }), [targetLanguages, visibility, availableLanguages, selectedGrammar, darkMode]); // Fixed: Removed "QH"
 
   return (
     <SettingsContext.Provider value={value}>
