@@ -44,8 +44,11 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_AI_PROVIDER: ${{ secrets.VITE_AI_PROVIDER }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
-          # Add any other VITE_ keys here...
+          VITE_GROQ_API_KEY: ${{ secrets.VITE_GROQ_API_KEY }}
+          VITE_GROQ_MODEL: ${{ secrets.VITE_GROQ_MODEL }}
+          VITE_USE_MOCK_DATA: ${{ secrets.VITE_USE_MOCK_DATA }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

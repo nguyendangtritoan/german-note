@@ -35,8 +35,11 @@ export const WordCard = ({ wordData, onDelete, onRegenerate }) => {
     setIsRegenerating(false);
   };
 
-  const formatForms = (text) => text ? text.replace(/,/g, ' \u00B7') : null;
-
+const formatForms = (text) => {
+    if (!text) return null;
+    if (Array.isArray(text)) return text.join(' \u00B7 ');
+    return String(text).replace(/,/g, ' \u00B7');
+  };
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-md border border-slate-100 dark:border-slate-700 transition-all duration-300 group overflow-hidden relative">
       
