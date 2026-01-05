@@ -37,7 +37,7 @@ export const buildSystemPrompt = (word, languages, grammarTopic = null, options 
 1. Identify type (Noun, Verb, Adjective, etc).
 ${nounInstruction}
 ${verbInstruction}
-4. Translate to: ${langInstruction} (Use the most common meaning).
+4. Translate to: ${langInstruction} (Use the most common meaning. If the word has multiple distinct, common meanings, separate them with " | ", e.g. "Bench | Bank").
 5. Match "original" to input "${word}" (or its Lemma if input was conjugated).
 ${grammarInstruction}
 

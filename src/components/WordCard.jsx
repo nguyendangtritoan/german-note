@@ -20,7 +20,7 @@ const renderHighlightedText = (text) => {
 export const WordCard = ({ wordData, onDelete, onRegenerate }) => {
   const { visibility } = useSettings();
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const { original, article, type, translations = {}, example, grammarTopic,Tk, plural, verbForms } = wordData;
+  const { original, article, type, translations = {}, example, grammarTopic, Tk, plural, verbForms } = wordData;
 
   const renderArticle = () => {
     if (!article || article === 'null' || !visibility.article) return null;
@@ -35,14 +35,14 @@ export const WordCard = ({ wordData, onDelete, onRegenerate }) => {
     setIsRegenerating(false);
   };
 
-const formatForms = (text) => {
+  const formatForms = (text) => {
     if (!text) return null;
     if (Array.isArray(text)) return text.join(' \u00B7 ');
     return String(text).replace(/,/g, ' \u00B7');
   };
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-md border border-slate-100 dark:border-slate-700 transition-all duration-300 group overflow-hidden relative">
-      
+
       {/* Header Badges */}
       <div className="px-5 pt-5 pb-1 flex justify-between items-start">
         <div className="flex gap-2">
@@ -88,7 +88,12 @@ const formatForms = (text) => {
             <div key={lang} className="flex items-center gap-3 group/trans">
               <span className="text-[10px] font-bold text-slate-400 w-6 text-right uppercase tracking-wider">{lang}</span>
               <span className="text-lg text-slate-700 dark:text-slate-300 font-medium border-b border-transparent group-hover/trans:border-slate-100 dark:group-hover/trans:border-slate-700 transition-colors">
-                {text}
+                {text.split('|').map((part, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && <span className="text-slate-300 dark:text-slate-600 mx-2 text-base align-middle">|</span>}
+                    {part.trim()}
+                  </React.Fragment>
+                ))}
               </span>
             </div>
           ))}
@@ -100,7 +105,7 @@ const formatForms = (text) => {
         <div className={`relative bg-gradient-to-r from-indigo-50/40 to-slate-50/40 dark:from-slate-700/40 dark:to-slate-800/40 border-t border-slate-100/50 dark:border-slate-700/50 transition-all duration-300 ${visibility.example ? 'opacity-100' : 'hidden'}`}>
           <div className="px-5 py-3 flex gap-3 items-start">
             <div className="mt-1 shrink-0 opacity-30">
-               <Icon name="BookOpen" className="w-4 h-4 text-indigo-900 dark:text-indigo-300" />
+              <Icon name="BookOpen" className="w-4 h-4 text-indigo-900 dark:text-indigo-300" />
             </div>
             <p className="flex-1 text-base leading-relaxed italic text-slate-600 dark:text-slate-300">
               {renderHighlightedText(example)}
