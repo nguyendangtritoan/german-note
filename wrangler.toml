@@ -2,3 +2,14 @@ name = "german-note"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-01-06"
 
+[vars]
+VITE_FIREBASE_API_KEY = "AIzaSyDZaqdRqGPeAhhJMDjH5lXX2DaXkbqUlnU"
+VITE_FIREBASE_AUTH_DOMAIN = "german-note.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID = "german-note"
+VITE_FIREBASE_STORAGE_BUCKET = "german-note.firebasestorage.app"
+VITE_FIREBASE_MESSAGING_SENDER_ID = "334425339424"
+VITE_FIREBASE_APP_ID = "1:334425339424:web:f8278587bd0bfd22246e45"
+VITE_AI_PROVIDER = "groq"
+VITE_USE_MOCK_DATA = "false"
+
+
