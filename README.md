@@ -1,37 +1,77 @@
-1. API Layer (./api)
+# 🇩🇪 German Learning Companion
 
-Adapter: index.js (Routes to Gemini/Groq/Mock based on .env)
+A modern, AI-powered web application designed to help you master the German language effectively. This app combines the power of **Groq/Gemini LLMs** with spaced repetition principles to create a personalized learning experience.
 
-Providers: gemini.js, groq.js
+## ✨ Key Features
 
-Mock Data: mock.js
+*   **🤖 AI-Powered Analysis**: Instant feedback, translations, and grammatical explanations using advanced LLMs (Groq/Gemini).
+*   **📚 Context bundles**: Organize your vocabulary into context-specific bundles.
+*   **🃏 Smart Flashcards**: Review your saved words with an interactive flashcard mode.
+*   **📝 Grammar Insights**: Deep dive into German grammar rules with AI assistance.
+*   **🔒 Secure Auth**: Integrated Firebase Authentication for user management.
+*   **⚡ Serverless Backend**: Secure proxy functions via Cloudflare Workers to protect API keys.
 
-2. Core Logic (./hooks)
+## 🛠️ Tech Stack
 
-useAppLogic.js: The "Brain" (Auth, Search Waterfall, Saving, Deleting).
+*   **Frontend**: React, Vite, Tailwind CSS
+*   **Backend / Edge**: Cloudflare Pages Functions
+*   **Database / Auth**: Firebase (Firestore & Auth)
+*   **AI Models**: Groq (Llama/Mixtral) & Google Gemini
 
-useLocalStorage.js: Persistence helper.
+## 🚀 Local Development
 
-3. State Management (./context)
+To run this project locally, you need two terminal sessions running simultaneously (one for the frontend, one for the backend functions).
 
-BundleContext.jsx: Tracks activeBundleId.
+### Prerequisites
+*   Node.js v22+
+*   npm
 
-SettingsContext.jsx: Tracks targetLanguages, visibility, and selectedGrammar.
+### 1. Setup Environment Variables
+Create a `.env` file in the root directory:
 
-4. UI Components (./components)
+```bash
+# Public Client Config (Firebase)
+VITE_FIREBASE_API_KEY=your_key
+VITE_FIREBASE_AUTH_DOMAIN=your_domain
+... (other firebase config)
 
-Main Views: Dashboard.jsx (Controller), LoginScreen.jsx, LiveFeed.jsx.
+# Backend Secrets (Do NOT prefix with VITE_)
+GROQ_API_KEY=your_secret_key
+GEMINI_API_KEY=your_secret_key
+```
 
-Interactive: InputHero.jsx (Search + Grammar Badge), BundleSelector.jsx (Popover Menu), WordCard.jsx.
+### 2. Run the Development Server
 
-Modals: FlashcardModal.jsx (Study), GrammarModal.jsx (Topics), SettingsModal.jsx, ConfirmationModal.jsx.
+**Terminal 1 (Backend - Wrangler):**
+```bash
+npm run pages:dev
+```
+*   This starts the Cloudflare Functions proxy on `http://127.0.0.1:8788`.
 
-Primitives (./components/ui): Button.jsx, Icon.jsx, Modal.jsx.
+**Terminal 2 (Frontend - Vite):**
+```bash
+npm run dev
+```
+*   This starts the Vite dev server. Access the app at the URL shown here (usually `http://localhost:5173`).
 
-5. Utilities (./utils)
+## ☁️ Deployment (Cloudflare Pages)
 
-promptUtils.js: Centralized Prompt Engineering (System Instructions + JSON Schema).
+This project is optimized for **Cloudflare Pages**.
 
-grammarData.js: The CEFR A1-B2 topic list.
+1.  Connect your GitHub repository to Cloudflare Pages.
+2.  **Build Settings**:
+    *   **Framework**: React (Vite)
+    *   **Command**: `npm run build`
+    *   **Output directory**: `dist`
+3.  **Environment Variables**:
+    *   Add your Firebase config (e.g., `VITE_FIREBASE_API_KEY`) to `wrangler.toml` (recommended) or Dashboard > Production variables.
+    *   Add your AI Keys (`GROQ_API_KEY`, etc.) as **Secrets** in the Cloudflare Dashboard.
 
-constants.jsx: API URLs.
+## 📂 Project Structure
+
+*   **`/functions`**: Serverless backend functions (API proxies).
+*   **`/src/api`**: Frontend API adapters routing requests to `/functions`.
+*   **`/src/components`**: Reusable UI components.
+*   **`/src/context`**: Global state management (Auth, Settings).
+*   **`/src/hooks`**: Core business logic and custom hooks.
+*   **`/src/utils`**: Helper functions and AI prompt engineering.
