@@ -2,9 +2,9 @@ import React from 'react';
 import { WordCard, WordCardSkeleton } from './WordCard';
 import { Icon } from './ui/Icon';
 
-const LiveFeed = ({ words, isLoading, onDeleteWord, onDeleteWordFromBundle, onRegenerateWord, activeBundleId }) => {
+const LiveFeed = ({ words, isLoading, onDeleteWord, onDeleteWordFromBundle, onRegenerateWord, onUpdateWord, activeBundleId }) => {
   const hasWords = words && words.length > 0;
-  
+
   const renderListWithDividers = () => {
     if (!words) return null;
     const listItems = [];
@@ -12,22 +12,23 @@ const LiveFeed = ({ words, isLoading, onDeleteWord, onDeleteWordFromBundle, onRe
       const currentWord = words[i];
       const nextWord = words[i + 1];
       const itemKey = currentWord.id || `word-${i}-${currentWord.original}`;
-      
+
       const deleteHandler = activeBundleId
         ? () => onDeleteWordFromBundle(activeBundleId, currentWord.id)
         : () => onDeleteWord(currentWord.id);
 
       // FIX: Only allow regeneration if NOT in a saved bundle (activeBundleId is null)
-      const regenerateHandler = !activeBundleId 
-        ? () => onRegenerateWord(currentWord.id) 
+      const regenerateHandler = !activeBundleId
+        ? () => onRegenerateWord(currentWord.id)
         : null;
 
       listItems.push(
-        <WordCard 
-          key={itemKey} 
-          wordData={currentWord} 
-          onDelete={deleteHandler} 
-          onRegenerate={regenerateHandler} 
+        <WordCard
+          key={itemKey}
+          wordData={currentWord}
+          onDelete={deleteHandler}
+          onRegenerate={regenerateHandler}
+          onUpdate={onUpdateWord}
         />
       );
 
@@ -51,7 +52,7 @@ const LiveFeed = ({ words, isLoading, onDeleteWord, onDeleteWordFromBundle, onRe
   };
 
   return (
-    <div className="space-y-4 pb-20"> 
+    <div className="space-y-4 pb-20">
       {isLoading && <WordCardSkeleton />}
       {renderListWithDividers()}
       {!isLoading && !hasWords && (
@@ -63,8 +64,8 @@ const LiveFeed = ({ words, isLoading, onDeleteWord, onDeleteWordFromBundle, onRe
             {activeBundleId ? "Bundle Empty" : "Ready for Class"}
           </h3>
           <p className="text-slate-500 max-w-sm mx-auto leading-relaxed">
-            {activeBundleId 
-              ? "This bundle has no words yet." 
+            {activeBundleId
+              ? "This bundle has no words yet."
               : "Type a word in the search bar above to start building your vocabulary."}
           </p>
         </div>

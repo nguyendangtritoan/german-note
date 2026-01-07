@@ -17,10 +17,15 @@ const renderHighlightedText = (text) => {
   });
 };
 
-export const WordCard = ({ wordData, onDelete, onRegenerate }) => {
+export const WordCard = ({ wordData, onDelete, onRegenerate, onUpdate }) => {
   const { visibility } = useSettings();
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const { original, article, type, translations = {}, example, grammarTopic, Tk, plural, verbForms } = wordData;
+
+  // Edit State
+  const [editOriginal, setEditOriginal] = useState(original);
+  const [editTranslations, setEditTranslations] = useState(translations);
 
   const renderArticle = () => {
     if (!article || article === 'null' || !visibility.article) return null;
@@ -35,11 +40,39 @@ export const WordCard = ({ wordData, onDelete, onRegenerate }) => {
     setIsRegenerating(false);
   };
 
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    setIsEditing(true);
+    setEditOriginal(original);
+    setEditTranslations(translations);
+  };
+
+  const handleSaveClick = async (e) => {
+    e.stopPropagation();
+    if (onUpdate) {
+      await onUpdate(wordData.id, {
+        original: editOriginal,
+        translations: editTranslations
+      });
+    }
+    setIsEditing(false);
+  };
+
+  const handleCancelClick = (e) => {
+    e.stopPropagation();
+    setIsEditing(false);
+  };
+
+  const handleTranslationChange = (lang, value) => {
+    setEditTranslations(prev => ({ ...prev, [lang]: value }));
+  };
+
   const formatForms = (text) => {
     if (!text) return null;
     if (Array.isArray(text)) return text.join(' \u00B7 ');
     return String(text).replace(/,/g, ' \u00B7');
   };
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm hover:shadow-md border border-slate-100 dark:border-slate-700 transition-all duration-300 group overflow-hidden relative">
 
@@ -56,19 +89,50 @@ export const WordCard = ({ wordData, onDelete, onRegenerate }) => {
             </span>
           )}
         </div>
-        {onDelete && (
-          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Remove">
-            <Icon name="X" className="w-4 h-4" />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {isEditing ? (
+            <>
+              <button onClick={handleSaveClick} className="text-green-500 hover:bg-green-50 dark:hover:bg-green-900/30 p-1.5 rounded-lg transition-all" title="Save">
+                <Icon name="Check" className="w-4 h-4" />
+              </button>
+              <button onClick={handleCancelClick} className="text-slate-400 hover:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 p-1.5 rounded-lg transition-all" title="Cancel">
+                <Icon name="X" className="w-4 h-4" />
+              </button>
+            </>
+          ) : (
+            <>
+              {onUpdate && (
+                <button onClick={handleEditClick} className="text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Edit">
+                  <Icon name="Pencil" className="w-4 h-4" />
+                </button>
+              )}
+              {onDelete && (
+                <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-all opacity-0 group-hover:opacity-100" title="Remove">
+                  <Icon name="Trash2" className="w-4 h-4" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Content */}
       <div className="px-5 pb-4">
         <div className="mb-3">
           <div className="flex flex-wrap items-center gap-x-6">
-            <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
-              {renderArticle()}{original}
+            <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight flex items-center">
+              {renderArticle()}
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editOriginal}
+                  onChange={(e) => setEditOriginal(e.target.value)}
+                  className="bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-2 py-1 text-3xl font-extrabold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full min-w-[200px]"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                original
+              )}
             </h3>
             {visibility.verbForms && verbForms && verbForms !== 'null' && (
               <span className="text-2xl font-medium text-slate-300 dark:text-slate-600 tracking-tight blur-[0.5px] hover:blur-0 transition-all duration-300">
@@ -84,19 +148,34 @@ export const WordCard = ({ wordData, onDelete, onRegenerate }) => {
         </div>
 
         <div className="space-y-2 mt-4">
-          {translations && Object.entries(translations).map(([lang, text]) => (
-            <div key={lang} className="flex items-center gap-3 group/trans">
-              <span className="text-[10px] font-bold text-slate-400 w-6 text-right uppercase tracking-wider">{lang}</span>
-              <span className="text-lg text-slate-700 dark:text-slate-300 font-medium border-b border-transparent group-hover/trans:border-slate-100 dark:group-hover/trans:border-slate-700 transition-colors">
-                {text.split('|').map((part, i) => (
-                  <React.Fragment key={i}>
-                    {i > 0 && <span className="text-slate-300 dark:text-slate-600 mx-2 text-base align-middle">|</span>}
-                    {part.trim()}
-                  </React.Fragment>
-                ))}
-              </span>
-            </div>
-          ))}
+          {isEditing ? (
+            Object.entries(editTranslations).map(([lang, text]) => (
+              <div key={lang} className="flex items-center gap-3">
+                <span className="text-[10px] font-bold text-slate-400 w-6 text-right uppercase tracking-wider">{lang}</span>
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => handleTranslationChange(lang, e.target.value)}
+                  className="flex-1 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded px-2 py-1 text-lg text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            ))
+          ) : (
+            translations && Object.entries(translations).map(([lang, text]) => (
+              <div key={lang} className="flex items-center gap-3 group/trans">
+                <span className="text-[10px] font-bold text-slate-400 w-6 text-right uppercase tracking-wider">{lang}</span>
+                <span className="text-lg text-slate-700 dark:text-slate-300 font-medium border-b border-transparent group-hover/trans:border-slate-100 dark:group-hover/trans:border-slate-700 transition-colors">
+                  {text.split('|').map((part, i) => (
+                    <React.Fragment key={i}>
+                      {i > 0 && <span className="text-slate-300 dark:text-slate-600 mx-2 text-base align-middle">|</span>}
+                      {part.trim()}
+                    </React.Fragment>
+                  ))}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

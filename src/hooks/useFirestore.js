@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { 
-  doc, setDoc, getDoc, deleteDoc, collection, 
-  onSnapshot, query, serverTimestamp 
+import {
+  doc, setDoc, getDoc, deleteDoc, collection,
+  onSnapshot, query, serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useLocalStorage } from './useLocalStorage';
@@ -39,14 +39,14 @@ export const useFirestore = (user, activeBundleId, setActiveBundleId) => {
     if (!user) return;
     const appId = 'default-german-app';
     const sessionRef = doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current');
-    
+
     // Only listen if we are NOT in a bundle view
     if (!activeBundleId) {
       const unsub = onSnapshot(sessionRef, (s) => {
         if (s.exists()) {
           const words = s.data().words || [];
           setCurrentSessionWords(words);
-          setLocalSessionCache(words); 
+          setLocalSessionCache(words);
         }
       });
       return () => unsub();
@@ -66,7 +66,7 @@ export const useFirestore = (user, activeBundleId, setActiveBundleId) => {
     const bundlesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'bundles');
     const q = query(bundlesRef);
     const unsub = onSnapshot(q, (s) => {
-      setPastBundles(s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.date) - new Date(a.date)));
+      setPastBundles(s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => new Date(b.date) - new Date(a.date)));
     });
     return () => unsub();
   }, [user]);
@@ -75,6 +75,11 @@ export const useFirestore = (user, activeBundleId, setActiveBundleId) => {
   const handleDeleteWord = async (wordId) => {
     const newWords = currentSessionWords.filter(w => w.id !== wordId);
     await syncSession(newWords);
+  };
+
+  const handleUpdateWord = async (wordId, newWordData) => {
+    const updatedWords = currentSessionWords.map(w => w.id === wordId ? { ...w, ...newWordData } : w);
+    await syncSession(updatedWords);
   };
 
   const handleDeleteWordFromBundle = async (bundleId, wordId) => {
@@ -112,7 +117,7 @@ export const useFirestore = (user, activeBundleId, setActiveBundleId) => {
     try {
       const existingBundle = pastBundles.find(b => b.id === targetId);
       const existingWords = existingBundle ? existingBundle.words : [];
-      
+
       // Simple de-dupe based on original text
       const existingSignatures = new Set(existingWords.map(w => `${w.original.toLowerCase()}|${w.grammarTopic || ''}`));
       const uniqueNewWords = currentSessionWords.filter(w => !existingSignatures.has(`${w.original.toLowerCase()}|${w.grammarTopic || ''}`));
@@ -122,15 +127,15 @@ export const useFirestore = (user, activeBundleId, setActiveBundleId) => {
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'session', 'current'), { words: [] });
         setCurrentSessionWords([]);
         setLocalSessionCache([]);
-        return true; 
+        return true;
       }
 
       const mergedWords = [...uniqueNewWords, ...existingWords];
 
       await setDoc(bundleRef, {
-        date: targetId, 
+        date: targetId,
         lastUpdated: serverTimestamp(),
-        words: mergedWords, 
+        words: mergedWords,
         wordCount: mergedWords.length
       }, { merge: true });
 
@@ -141,7 +146,7 @@ export const useFirestore = (user, activeBundleId, setActiveBundleId) => {
       setCurrentSessionWords([]);
       setLocalSessionCache([]);
       return true;
-    } catch (e) { 
+    } catch (e) {
       console.error("Summarize Error:", e);
       return false;
     }
@@ -152,6 +157,7 @@ export const useFirestore = (user, activeBundleId, setActiveBundleId) => {
     pastBundles,
     syncSession, // Exposed for useAI
     handleDeleteWord,
+    handleUpdateWord,
     handleDeleteWordFromBundle,
     handleDeleteBundle,
     handleSummarize

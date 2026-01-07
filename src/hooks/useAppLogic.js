@@ -7,32 +7,33 @@ import { useAI } from './useAI';
 export const useAppLogic = () => {
   const settings = useSettings(); // { targetLanguages, selectedGrammar, visibility }
   const { activeBundleId, setActiveBundleId } = useBundle();
-  
+
   // 1. Auth Hook
-  const { 
-    user, 
-    authLoading, 
-    handleGoogleLogin, 
-    handleGuestLogin, 
-    handleLinkGoogleAccount 
+  const {
+    user,
+    authLoading,
+    handleGoogleLogin,
+    handleGuestLogin,
+    handleLinkGoogleAccount
   } = useAuth();
 
   // 2. Firestore Data Hook
-  const { 
-    currentSessionWords, 
-    pastBundles, 
+  const {
+    currentSessionWords,
+    pastBundles,
     syncSession,
-    handleDeleteWord, 
+    handleDeleteWord,
+    handleUpdateWord,
     handleDeleteWordFromBundle,
     handleDeleteBundle,
     handleSummarize
   } = useFirestore(user, activeBundleId, setActiveBundleId);
 
   // 3. AI Logic Hook (Needs access to data & sync function)
-  const { 
-    isLoading, 
-    handleSearch, 
-    handleRegenerateWord 
+  const {
+    isLoading,
+    handleSearch,
+    handleRegenerateWord
   } = useAI(user, authLoading, currentSessionWords, syncSession, settings);
 
   // Return Unified Interface
@@ -47,6 +48,7 @@ export const useAppLogic = () => {
     handleSummarize,
     handleDeleteBundle,
     handleDeleteWord,
+    handleUpdateWord,
     handleDeleteWordFromBundle,
     handleLinkGoogleAccount,
     handleGoogleLogin,
